@@ -24,7 +24,6 @@
 
 
 void Initialize(void);
-//void InitializeIO(void);
 void ToggleLED(void); //toggle the current state of the on-board LED
 void CheckErrorsUSART(void); //fix any framing or overrun errors in the USART
 
@@ -69,13 +68,19 @@ uint8_t RF_sendByte(uint8_t byte){
 	return reply;
 }
 
+uint8_t* RF_sendArray(uint8_t* data, uint8_t len){
+	uint8_t i = 0;
+	static uint8_t reply[32] = {0};
+
+	for (i = 0; i < len; i++)
+		reply[i] = RF_sendByte(data[i]);
+
+	return reply;
+}
+
 void main(void) {
 	uint8_t data = 32;
 	uint8_t new_data = 21;
-//	uint8_t data[4] = "ADF";
-//	uint8_t new_data[4] = {0};
-
-//	uint8_t count;
 	uint8_t destIP[5] = { 192, 168, 1, 1, 111 };
 
 	Initialize(); //initialize IO, UART, SPI, set up nRF24L01 as TX
@@ -86,12 +91,6 @@ void main(void) {
 	while (1) {
 
 		data = uart_getc();
-
-
-//		RF_sendData(data, 1);
-//		nrf24l01_write_tx_payload(&data, 1, true);
-//		while (!(nrf24l01_irq_pin_active() && nrf24l01_irq_tx_ds_active()));
-
 		new_data = RF_sendByte(data);
 
 
@@ -100,12 +99,6 @@ void main(void) {
 			printf("Erororrororororr\n\r");
 
 		ToggleLED(); //toggle the on-board LED as visual indication that the loop has completed
-
-//		count = 10;
-//		while (count --)
-//			_delay_cycles(1000);
-//		printf("End\n\r");
-//		while (1);
 	}
 }
 
