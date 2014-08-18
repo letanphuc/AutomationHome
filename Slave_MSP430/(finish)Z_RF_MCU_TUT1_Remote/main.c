@@ -54,8 +54,11 @@ void main(void) {
 
 	printf("Remote now run\n\r");
 	while (1) {
-		printf("Receive byte:%d\n\r", RF_getByte());
-		ToggleLED(); //toggle the on-board LED as visual indication that the loop has completed
+//		printf("Receive byte:%d\n\r", RF_getByte());
+//		ToggleLED(); //toggle the on-board LED as visual indication that the loop has completed
+		printf("Sleep\n\r");
+		LPM3;
+		printf("weakup\n\r");
 	}
 }
 
@@ -71,11 +74,30 @@ void Initialize(void) {
 	uart_puts("Now u see me\n\r");
 	SPI_Init();
 
+	/* init interrupt on P2.0 */
+	P2SEL &= (~BIT0);     // Set P2.0 SEL as GPIO
+	P2DIR &= (~BIT0);     // Set P2.0 SEL as Input
+	P2IES |= (BIT0);      // Falling Edge 1 -> 0
+	P2IFG  &= (~BIT0);    // Clear interrupt flag for P2.0
+	P2IE  |= (BIT0);      // Enable interrupt for P2.0
+
 	nrf24l01_initialize_debug(true, 1, false); //initialize the 24L01 to the debug configuration as RX, 1 data byte, and auto-ack disabled
 
+	__enable_interrupt();  // Enable Global Interrupts
 }
 
 //toggles on-board LED
 void ToggleLED(void) {
 	P1OUT ^= BIT0;
+}
+
+
+
+#pragma vector=PORT2_VECTOR
+__interrupt void Port_2(void)
+{
+    P2IFG &= (~BIT0);  // P2.0 IFG clear
+	printf("Interrupt\n\r");
+	printf("Receive byte:%d\n\r", RF_getByte());
+	ToggleLED(); //toggle the on-board LED as visual indication that the loop has completed
 }
